@@ -49,19 +49,19 @@ resource "aws_key_pair" "auth" {
 }
 
 data "aws_ami" "ubuntu" {
-    most_recent = true
+  most_recent = true
 
-    filter {
-        name   = "name"
-        values = ["ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-*"]
-    }
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-*"]
+  }
 
-    filter {
-        name   = "virtualization-type"
-        values = ["hvm"]
-    }
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
 
-    owners = ["099720109477"] # Canonical
+  owners = ["099720109477"] # Canonical
 }
 
 resource "aws_instance" "fxbattle" {
@@ -86,22 +86,29 @@ resource "aws_instance" "fxbattle" {
   # Our Security group to allow HTTP and SSH access
   vpc_security_group_ids = ["${aws_security_group.fxbattle.id}"]
 
-  user_data = "${file("cloud-init/docker.cfg")}"
+  # Copy the chef solo recipe to the created instance
+  provisioner "file" {
+    source      = "chef"
+    destination = "/home/ubuntu"
 
-  # We run a remote provisioner on the instance after creating it.
-  # In this case, we just install nginx and start it. By default,
-  # this should be on port 80
+    connection {
+      private_key = "${file("~/.ssh/id_rsa")}"
+    }
+  }
+
+  # Install the chef omnibus, and delegate to chef-solo
   provisioner "remote-exec" {
     inline = [
-      "sleep 60",
-      "git clone https://github.com/nadvamir/trading-game.git",
-      "cd trading-game",
-      "git submodule update --init --recursive",
-      "sudo docker-compose up -d",
+      "sudo apt-get install -y build-essential",
+      "curl -L https://www.opscode.com/chef/install.sh | sudo bash",
+      "sudo /opt/chef/embedded/bin/gem install berkshelf --no-ri --no-rdoc",
+      "cd /home/ubuntu/chef",
+      "sudo /opt/chef/embedded/bin/berks vendor --berksfile cookbooks/fxbattle/Berksfile cookbooks",
+      "sudo chef-client -z -o fxbattle",
     ]
 
     connection {
-        private_key = "${file("~/.ssh/id_rsa")}"
+      private_key = "${file("~/.ssh/id_rsa")}"
     }
   }
 }

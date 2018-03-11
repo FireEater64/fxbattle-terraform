@@ -4,7 +4,7 @@ variable "public_key_path" {
 
 variable "key_name" {
   description = "Desired name of AWS key pair"
-  default = "fenris"
+  default = "terraform"
 }
 
 variable "instance_size" {
