@@ -2,17 +2,17 @@ variable "public_key_path" {
   default = "~/.ssh/id_rsa.pub"
 }
 
-variable "key_name" {
-  description = "Desired name of AWS key pair"
-  default = "terraform"
-}
-
 variable "instance_size" {
   description = "Desired instance size"
-  default = "c5.2xlarge"
+  default = "Standard_DS2_v2"
 }
 
-variable "aws_region" {
-  description = "AWS region to launch servers."
-  default     = "eu-west-2"
+variable "azure_region" {
+  description = "Azure location to create resources in"
+  default     = "westeurope"
+}
+
+variable "environment" {
+  description = "Default value for environment tag"
+  default     = "Production"
 }

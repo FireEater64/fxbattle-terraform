@@ -4,7 +4,7 @@
 #
 
 # Pull fxbattle source
-git '/home/ubuntu/trading-game' do
+git '/home/azureuser/trading-game' do
     repository 'https://github.com/nadvamir/trading-game.git'
     enable_submodules true
 end
@@ -17,23 +17,20 @@ end
 
 # Build docker container
 docker_image 'fxbattle' do
-    source '/home/ubuntu/trading-game'
+    source '/home/azureuser/trading-game'
     action :build_if_missing
 end
 
 # Run up container
 docker_container 'fxbattle' do
     action :run_if_missing
+    port '8080:8080'
+    volumes ['/home/azureuser/trading-game/:/config']
 end
 
 # Install nginx
 include_recipe 'nginx'
-include_recipe 'acme'
 
 nginx_site 'fxbattle' do
-    template 'nginx-test.conf'
-  
-    notifies :reload, 'service[nginx]', :immediately
-  end
-
-include_recipe 'acme_client::nginx'
+    template 'fxbattle.conf'
+end

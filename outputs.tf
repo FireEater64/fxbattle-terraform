@@ -1,3 +1,3 @@
-output "elastic ip" {
-  value = "${aws_eip.fxbattle.public_ip}"
+output "public ip" {
+    value = "${azurerm_public_ip.fxbattle}"
 }
