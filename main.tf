@@ -1,16 +1,11 @@
 provider "azurerm" {}
 
-resource "azurerm_resource_group" "fxbattle" {
-  name = "fxbattle"
-  location = "${var.azure_region}"
-}
-
 # Create virtual network
 resource "azurerm_virtual_network" "fxbattle" {
     name                = "fxbattleNetwork"
     address_space       = ["10.0.0.0/16"]
     location            = "${var.azure_region}"
-    resource_group_name = "${azurerm_resource_group.fxbattle.name}"
+    resource_group_name = "${var.resource_group}"
 
     tags {
         environment = "${var.environment}"
@@ -20,7 +15,7 @@ resource "azurerm_virtual_network" "fxbattle" {
 # Create subnet
 resource "azurerm_subnet" "fxbattle" {
     name                 = "fxbattleSubnet"
-    resource_group_name  = "${azurerm_resource_group.fxbattle.name}"
+    resource_group_name  = "${var.resource_group}"
     virtual_network_name = "${azurerm_virtual_network.fxbattle.name}"
     address_prefix       = "10.0.1.0/24"
 }
@@ -29,19 +24,27 @@ resource "azurerm_subnet" "fxbattle" {
 resource "azurerm_public_ip" "fxbattle" {
   name                         = "fxbattlePublicIp"
   location                     = "${var.azure_region}"
-  resource_group_name          = "${azurerm_resource_group.fxbattle.name}"
-  public_ip_address_allocation = "dynamic"
+  resource_group_name          = "${var.resource_group}"
+  public_ip_address_allocation = "static"
 
   tags {
     environment = "${var.environment}"
   }
 }
 
+resource "azurerm_dns_a_record" "fxbattle" {
+  name                = "${var.domain}"
+  zone_name           = "fxbattle.uk"
+  resource_group_name = "${var.resource_group}"
+  ttl                 = 300
+  records             = ["${azurerm_public_ip.fxbattle.ip_address}"]
+}
+
 # Security group
 resource "azurerm_network_security_group" "fxbattle" {
     name                = "fxbattleSecurityGroup"
     location            = "${var.azure_region}"
-    resource_group_name = "${azurerm_resource_group.fxbattle.name}"
+    resource_group_name = "${var.resource_group}"
 
     security_rule {
         name                       = "SSH"
@@ -86,7 +89,7 @@ resource "azurerm_network_security_group" "fxbattle" {
 resource "azurerm_network_interface" "fxbattle" {
     name                      = "fxbattleNIC"
     location                  = "${var.azure_region}"
-    resource_group_name       = "${azurerm_resource_group.fxbattle.name}"
+    resource_group_name       = "${var.resource_group}"
     network_security_group_id = "${azurerm_network_security_group.fxbattle.id}"
 
     ip_configuration {
@@ -105,7 +108,7 @@ resource "azurerm_network_interface" "fxbattle" {
 resource "azurerm_virtual_machine" "fxbattle" {
   name                  = "fxbattleVM"
   location              = "${var.azure_region}"
-  resource_group_name   = "${azurerm_resource_group.fxbattle.name}"
+  resource_group_name   = "${var.resource_group}"
   network_interface_ids = ["${azurerm_network_interface.fxbattle.id}"]
   vm_size               = "${var.instance_size}"
 

@@ -28,9 +28,37 @@ docker_container 'fxbattle' do
     volumes ['/home/azureuser/trading-game/:/config']
 end
 
+# Generate a self-signed if we don't have a cert to prevent bootstrap problems
+include_recipe 'acme'
+site = node.read!('fxbattle', 'url')
+acme_directory = "/var/www/#{site}.acme"
+
+directory "/etc/nginx/ssl" do
+    recursive true
+end
+directory acme_directory do
+    recursive true
+end
+
+acme_selfsigned site do
+  crt     "/etc/nginx/ssl/#{site}.crt"
+  key     "/etc/nginx/ssl/#{site}.key"
+  chain    "/etc/nginx/ssl/#{site}.pem"
+end
+
 # Install nginx
 include_recipe 'nginx'
 
 nginx_site 'fxbattle' do
     template 'fxbattle.conf'
+    notifies :restart, "service[nginx]", :immediately
+end
+
+# Get and auto-renew the certificate from Let's Encrypt
+acme_certificate site do
+  key               "/etc/nginx/ssl/#{site}.key"
+  fullchain         "/etc/nginx/ssl/#{site}.pem"
+  wwwroot           acme_directory
+  notifies          :restart, "service[nginx]", :immediately
+  retries           3
 end

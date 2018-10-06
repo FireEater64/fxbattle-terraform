@@ -16,3 +16,13 @@ variable "environment" {
   description = "Default value for environment tag"
   default     = "Production"
 }
+
+variable "domain" {
+  description = "Domain to create"
+  default     = "standrews"
+}
+
+variable "resource_group" {
+  description = "Resource group to create fxbattle in"
+  default = "fxbattle"
+}
