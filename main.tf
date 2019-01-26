@@ -25,7 +25,7 @@ resource "azurerm_public_ip" "fxbattle" {
   name                         = "fxbattlePublicIp"
   location                     = "${var.azure_region}"
   resource_group_name          = "${var.resource_group}"
-  public_ip_address_allocation = "static"
+  allocation_method            = "Static"
 
   tags {
     environment = "${var.environment}"
